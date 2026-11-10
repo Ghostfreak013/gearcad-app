@@ -1,16 +1,3 @@
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      # Add this step to explicitly force Gradle 8.0
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: 8.0
-
-      - name: Build Android APK Using Pre-Installed SDK
-        # Keep this as standard global gradle command since you are using setup-gradle above
-        run: gradle assembleRelease
 name: Build Free Android APK
 on:
   push:
@@ -24,12 +11,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build Android APK Using Pre-Installed SDK
-        run: |
-          sudo apt-get update && sudo apt-get install -y gradle unzip openjdk-17-jdk
-          export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-          export PATH=$JAVA_HOME/bin:$PATH
+      - name: Set up Java Development Kit (JDK 17)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
+      # Dynamically installs the Gradle version required for Android tools 8.1.4
+      - name: Setup Gradle 8.1.4
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.1.4
+
+      - name: Prepare Project Structure and Build Files
+        run: |
           mkdir -p app/src/main/assets app/src/main/java/com/workshop/gearcad
           for z in *.zip; do [ -f "$z" ] && unzip -o "$z" -d app/src/main/assets/; done
           cp *.html *.json *.png *.js app/src/main/assets/ 2>/dev/null || true
@@ -137,7 +132,9 @@ jobs:
           }
           EOF
 
-          gradle assembleDebug --no-daemon
+      # Separating the execution ensures it hooks directly into the newly installed Gradle 8.1.4 toolchain
+      - name: Build Android APK Using Pre-Installed SDK
+        run: gradle assembleDebug --no-daemon
 
       - name: Upload Ready-to-Install APK
         uses: actions/upload-artifact@v4
