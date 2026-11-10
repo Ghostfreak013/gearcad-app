@@ -1,3 +1,16 @@
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Add this step to explicitly force Gradle 8.0
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.0
+
+      - name: Build Android APK Using Pre-Installed SDK
+        # Keep this as standard global gradle command since you are using setup-gradle above
+        run: gradle assembleRelease
 name: Build Free Android APK
 on:
   push:
